@@ -8,12 +8,23 @@
 
 #include <signal.h>
 #include <sys/time.h>
+#include <unistd.h>
 
 class RecFile
 {
-	FILE *                     fp       = 0;
-	const char *               rec_file = "kbdrec.txt";
-	std::map<std::string, int> rec;
+	FILE *                                   fp       = 0;
+	const char *                             rec_file = "kbdrec.txt";
+	std::map<std::string, int>               rec;
+	std::vector<std::pair<std::string, int>> sorted()
+	{
+		std::vector<std::pair<std::string, int>> out;
+		std::copy(rec.begin(), rec.end(), std::back_inserter(out));
+		std::sort(out.begin(), out.end(),
+		          [](const std::pair<std::string, int> &l, const std::pair<std::string, int> &r) {
+			          return l.second > r.second;
+		          });
+		return out;
+	}
 
 public:
 	void load()
@@ -32,34 +43,36 @@ public:
 			rec[key_name] = count;
 		}
 		fclose(fp);
-		fp = 0;
 	}
-	void save()
+	void p_file()
 	{
-		printf("\n"); // print new line after ctrl+c
-
 		FILE *fp = fopen(rec_file, "wb+");
 		if (fp == 0) {
 			printf("[!] cannot open and write (%s), will not create.\n", rec_file);
+			return;
 		}
 
-		std::vector<std::pair<std::string, int>> out;
-		std::copy(rec.begin(), rec.end(), std::back_inserter(out));
-		std::sort(out.begin(), out.end(),
-		          [](const std::pair<std::string, int> &l, const std::pair<std::string, int> &r) {
-			          return l.second > r.second;
-		          });
+		auto out = sorted();
 
 		for (auto &p : out) {
-			if (fp) {
-				fprintf(fp, "%s\t%d\n", p.first.c_str(), p.second);
-			}
+			fprintf(fp, "%s\t%d\n", p.first.c_str(), p.second);
+		}
+		fclose(fp);
+	}
+	void p_scr()
+	{
+		printf("\n"); // print new line after ctrl+c
+
+		auto out = sorted();
+
+		for (auto &p : out) {
 			fprintf(stdout, "%s\t%d\n", p.first.c_str(), p.second);
 		}
-		if (fp) {
-			fclose(fp);
-		}
-		fp = 0;
+	}
+	void save()
+	{
+		p_file();
+		p_scr();
 	}
 	void push(const std::string &key)
 	{
@@ -113,6 +126,13 @@ void sig(int _)
 	alive = 0;
 }
 
+RecFile rf;
+
+void dump(int _)
+{
+	rf.p_scr();
+}
+
 int main(int argc, char **argv)
 {
 	if (argc != 2) {
@@ -121,6 +141,8 @@ int main(int argc, char **argv)
 		return -1;
 	}
 
+	printf("[+] PID: %d\n", getpid());
+
 	std::string pn = "sudo evtest /dev/input/event" + std::string(argv[1]) +
 	                 " | stdbuf -o0 grep '(KEY.*1$' | stdbuf -o0 sed -E 's/.*KEY_(.*)\\).*/\\1/g'";
 	FILE *p_ev = popen(pn.c_str(), "r");
@@ -128,11 +150,11 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	signal(SIGINT, sig);  // ctrl+c
-	signal(SIGPIPE, sig); // upstream gone
-	signal(SIGTERM, sig); // kill
+	signal(SIGINT, sig);   // ctrl+c
+	signal(SIGPIPE, sig);  // upstream gone
+	signal(SIGTERM, sig);  // kill
+	signal(SIGUSR1, dump); // print while running
 
-	RecFile rf;
 	rf.load();
 
 	char  key_name[30];
