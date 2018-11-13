@@ -15,7 +15,7 @@ class RecFile
 	const char *               rec_file = "kbdrec.txt";
 	std::map<std::string, int> rec;
 
-      public:
+public:
 	void load()
 	{
 		fp = fopen(rec_file, "rb");
@@ -52,11 +52,9 @@ class RecFile
 
 		for (auto &p : out) {
 			if (fp) {
-				fprintf(fp, "%s\t", p.first.c_str());
-				fprintf(fp, "%d\n", p.second);
+				fprintf(fp, "%s\t%d\n", p.first.c_str(), p.second);
 			}
-			fprintf(stdout, "%s\t", p.first.c_str());
-			fprintf(stdout, "%d\n", p.second);
+			fprintf(stdout, "%s\t%d\n", p.first.c_str(), p.second);
 		}
 		if (fp) {
 			fclose(fp);
@@ -83,7 +81,7 @@ class Speed
 		return (uint64_t)(tv.tv_sec) * 1000000 + tv.tv_usec;
 	}
 
-      public:
+public:
 	void init()
 	{
 		count = 0;
@@ -101,7 +99,7 @@ class Speed
 	{
 		uint64_t div = count > his_sz ? his_sz : count;
 		uint64_t sum = 0;
-		for (int i = 0; i < div; ++i) {
+		for (uint64_t i = 0; i < div; ++i) {
 			sum += history[i];
 		}
 		return (double)div / ((double)sum / 1000000) * 60;

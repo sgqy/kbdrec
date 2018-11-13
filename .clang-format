@@ -20,4 +20,4 @@ AllowShortBlocksOnASingleLine: false
 AllowShortFunctionsOnASingleLine: false
 
 PointerAlignment: Right
-
+AccessModifierOffset: -8
