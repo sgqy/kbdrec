@@ -7,13 +7,14 @@
 #include <vector>
 
 #include <signal.h>
+#include <sys/ioctl.h>
 #include <sys/time.h>
 #include <unistd.h>
 
 class RecFile
 {
 	FILE *                                   fp       = 0;
-	const char *                             rec_file = "kbdrec.txt";
+	const char *                             rec_file = "kbdrec.tsv";
 	std::map<std::string, int>               rec;
 	std::vector<std::pair<std::string, int>> sorted()
 	{
@@ -61,13 +62,14 @@ public:
 	}
 	void p_scr()
 	{
-		printf("\n"); // print new line after ctrl+c
-
-		auto out = sorted();
+		auto out   = sorted();
+		int  total = 0;
 
 		for (auto &p : out) {
-			fprintf(stdout, "%s\t%d\n", p.first.c_str(), p.second);
+			printf("%15s %6d\n", p.first.c_str(), p.second);
+			total += p.second;
 		}
+		printf("[+] Total: %d\n", total);
 	}
 	void save()
 	{
@@ -123,6 +125,7 @@ volatile int alive = 1;
 
 void sig(int _)
 {
+	printf("\n");
 	alive = 0;
 }
 
@@ -130,6 +133,7 @@ RecFile rf;
 
 void dump(int _)
 {
+	printf("\n");
 	rf.p_scr();
 }
 
@@ -137,7 +141,8 @@ int main(int argc, char **argv)
 {
 	if (argc != 2) {
 		printf("%s <ev-id>\n", argv[0]);
-		printf("To get event id with name, run `evtest'\n");
+		printf("To get event ID with name, run `evtest'\n");
+		printf("The ID may be different after reboot\n");
 		return -1;
 	}
 
@@ -161,6 +166,7 @@ int main(int argc, char **argv)
 	int   typed = 0;
 	Speed ss;
 	ss.init();
+	winsize win;
 	while (alive) {
 		if (fgets(key_name, 30, p_ev) == 0) {
 			break;
@@ -174,8 +180,9 @@ int main(int argc, char **argv)
 		rf.push(key_name);
 		++typed;
 		ss.push();
-		if (typed % 50 == 0) {
-			printf("%d (%lf/min)\n", typed, ss.get());
+		ioctl(STDOUT_FILENO, TIOCGWINSZ, &win);
+		if (typed % (win.ws_col - 19) == 0) {
+			printf("%6d (%3.2lf/min)\n", typed, ss.get());
 		} else {
 			printf(".");
 		}
