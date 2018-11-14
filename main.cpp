@@ -187,6 +187,10 @@ int main(int argc, char **argv)
 			printf(".");
 		}
 		fflush(stdout);
+
+		if (typed % 2000 == 0) {
+			rf.p_file();
+		}
 	}
 
 	pclose(p_ev);
