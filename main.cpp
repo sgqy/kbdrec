@@ -85,9 +85,12 @@ public:
 class Speed
 {
 	static const int his_sz = 100;
-	uint64_t         history[his_sz];
-	uint64_t         count;
-	uint64_t         last;
+	static const int str_sz = 100;
+
+	uint64_t history[his_sz];
+	uint64_t count;
+	uint64_t last;
+	char     curstr[str_sz];
 
 	inline uint64_t cur_time()
 	{
@@ -118,6 +121,15 @@ public:
 			sum += history[i];
 		}
 		return (double)div / ((double)sum / 1000000) * 60;
+	}
+	char *getcur()
+	{
+		struct timeval tv;
+		gettimeofday(&tv, 0);
+		struct tm *tm_info;
+		tm_info = localtime(&(tv.tv_sec));
+		strftime(curstr, str_sz, "%m-%d %T", tm_info);
+		return curstr;
 	}
 };
 
@@ -181,8 +193,8 @@ int main(int argc, char **argv)
 		++typed;
 		ss.push();
 		ioctl(STDOUT_FILENO, TIOCGWINSZ, &win);
-		if (typed % (win.ws_col - 19) == 0) {
-			printf("%6d (%3.2lf/min)\n", typed, ss.get());
+		if (typed % (win.ws_col - 34) == 0) {
+			printf("%6d (%3.2lf/min) %s\n", typed, ss.get(), ss.getcur());
 		} else {
 			printf(".");
 		}
