@@ -193,8 +193,8 @@ int main(int argc, char **argv)
 		++typed;
 		ss.push();
 		ioctl(STDOUT_FILENO, TIOCGWINSZ, &win);
-		if (typed % (win.ws_col - 34) == 0) {
-			printf("%6d (%3.2lf/min) %s\n", typed, ss.get(), ss.getcur());
+		if (typed % (win.ws_col - 35) == 0) {
+			printf("%7d (%6.2lf/min) %s\n", typed, ss.get(), ss.getcur());
 		} else {
 			printf(".");
 		}
