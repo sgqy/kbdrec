@@ -72,9 +72,14 @@ class RecFile
 
 		for (auto &p : out)
 		{
-			printf("%15s %6d\n", p.first.c_str(), p.second);
 			total += p.second;
 		}
+
+		for (auto &p : out)
+		{
+			printf("%15s %6d (%4.1lf%%)\n", p.first.c_str(), p.second, (double)(p.second) * 100 / total);
+		}
+
 		printf("[+] Total: %d\n", total);
 	}
 	void save()
